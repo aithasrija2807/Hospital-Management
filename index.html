@@ -1,0 +1,731 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareCompass | BedFinder Blitz</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f3f7fc;
+    color: #172b4d;
+}
+
+header {
+    background: linear-gradient(120deg,#063b70,#087eaa);
+    color: white;
+    padding: 25px 6%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+header h1 {
+    font-size: 28px;
+}
+
+header p {
+    margin-top: 7px;
+    color: #d8edff;
+}
+
+.emergency {
+    background: #ed3549;
+    color: white;
+    border: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.container {
+    padding: 30px 6%;
+}
+
+.notice {
+    background: #fff4db;
+    border-left: 5px solid #e5a000;
+    padding: 15px;
+    margin-bottom: 22px;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.search-area {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+input, select {
+    padding: 13px;
+    border: 1px solid #ccd7e5;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+#search {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.filter {
+    border: none;
+    padding: 10px 18px;
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    color: #174c79;
+    border: 1px solid #cdddec;
+}
+
+.filter.active {
+    background: #087eaa;
+    color: white;
+}
+
+.section-title {
+    margin: 25px 0 15px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px #dce5ef;
+}
+
+.stat h2 {
+    color: #087eaa;
+    margin-top: 8px;
+}
+
+.hospital-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(270px,1fr));
+    gap: 20px;
+}
+
+.hospital {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 3px 15px #dce5ef;
+    border-top: 4px solid #087eaa;
+}
+
+.hospital h3 {
+    margin-bottom: 10px;
+    color: #075080;
+}
+
+.hospital p {
+    margin: 8px 0;
+    color: #53647b;
+    font-size: 14px;
+}
+
+.beds {
+    background: #f1f7fb;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+    line-height: 1.9;
+}
+
+.status {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.Normal {
+    background: #d5f6df;
+    color: #087c35;
+}
+
+.Busy {
+    background: #fff0c5;
+    color: #966000;
+}
+
+.Divert {
+    background: #ffe0e0;
+    color: #c00000;
+}
+
+.action {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.action a, .action button {
+    text-decoration: none;
+    padding: 10px 13px;
+    border: none;
+    border-radius: 7px;
+    background: #087eaa;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.action .directions {
+    background: #153d70;
+}
+
+#map {
+    height: 380px;
+    border-radius: 12px;
+    margin-top: 15px;
+    z-index: 1;
+}
+
+.admin {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    margin-top: 30px;
+    box-shadow: 0 3px 15px #dce5ef;
+}
+
+.admin input, .admin select {
+    margin: 7px 5px 7px 0;
+    max-width: 180px;
+}
+
+.admin button {
+    background: #087eaa;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+footer {
+    text-align: center;
+    background: #07365f;
+    color: white;
+    padding: 25px;
+    margin-top: 35px;
+}
+
+@media(max-width:600px) {
+    header {
+        align-items: flex-start;
+    }
+
+    header h1 {
+        font-size: 23px;
+    }
+
+    #map {
+        height: 300px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>🏥 CareCompass</h1>
+        <p>BedFinder Blitz | Emergency Hospital Locator</p>
+    </div>
+
+    <button class="emergency"
+    onclick="location.href='tel:112'">
+        🚑 Emergency Help - 112
+    </button>
+</header>
+
+<div class="container">
+
+<div class="notice">
+    <b>⚠ DEMO PROJECT:</b> Hospital names, locations and bed
+    counts below are fictional sample data. They are not live
+    hospital records. Never use this demonstration to choose
+    emergency treatment. For a real emergency in India, call 112.
+</div>
+
+<h2 class="section-title">Find Nearby Hospitals</h2>
+
+<div class="search-area">
+    <input id="search" type="text"
+    placeholder="Search hospital or specialty..."
+    oninput="renderHospitals()">
+
+    <select id="bedFilter" onchange="renderHospitals()">
+        <option value="all">All Bed Types</option>
+        <option value="general">General Ward</option>
+        <option value="icu">ICU</option>
+        <option value="ventilator">Ventilator</option>
+        <option value="oxygen">Oxygen</option>
+    </select>
+
+    <button class="filter active" onclick="getLocation()">
+        📍 My Location
+    </button>
+</div>
+
+<div class="filters">
+    <button class="filter active"
+    onclick="setSpecialty('all',this)">All</button>
+
+    <button class="filter"
+    onclick="setSpecialty('Cardiology',this)">Cardiology</button>
+
+    <button class="filter"
+    onclick="setSpecialty('Trauma',this)">Trauma</button>
+
+    <button class="filter"
+    onclick="setSpecialty('Pediatrics',this)">Pediatrics</button>
+
+    <button class="filter"
+    onclick="setSpecialty('Burn Unit',this)">Burn Unit</button>
+
+    <button class="filter"
+    onclick="setSpecialty('Cath Lab',this)">Cath Lab</button>
+</div>
+
+<div class="stats">
+    <div class="stat">
+        <p>Total Hospitals</p>
+        <h2 id="total">15</h2>
+    </div>
+
+    <div class="stat">
+        <p>Available ICU Beds</p>
+        <h2 id="icuTotal">65</h2>
+    </div>
+
+    <div class="stat">
+        <p>Oxygen Beds</p>
+        <h2 id="oxygenTotal">180</h2>
+    </div>
+</div>
+
+<h2 class="section-title">🏥 Hospital Directory</h2>
+<p style="margin-bottom:15px;color:#64748b">
+    Sorted by estimated straight-line distance when location is available.
+</p>
+
+<div class="hospital-list" id="hospitalList"></div>
+
+<h2 class="section-title">🗺️ Hospital Map</h2>
+<div id="map"></div>
+
+<div class="admin">
+    <h2>🔐 Hospital Admin Console</h2>
+    <p style="margin:12px 0;color:#64748b">
+        Demonstration-only bed inventory editor.
+    </p>
+
+    <input id="adminPin" type="password"
+    placeholder="Demo PIN">
+
+    <br>
+
+    <select id="hospitalSelect"></select>
+
+    <select id="type">
+        <option value="general">General</option>
+        <option value="icu">ICU</option>
+        <option value="ventilator">Ventilator</option>
+        <option value="oxygen">Oxygen</option>
+    </select>
+
+    <select id="operation">
+        <option value="add">Increase beds (+)</option>
+        <option value="remove">Decrease beds (-)</option>
+    </select>
+
+    <input id="amount" type="number"
+    placeholder="Number of beds" min="1">
+
+    <button onclick="updateBeds()">Update Beds</button>
+
+    <p id="adminMessage" style="margin-top:12px"></p>
+
+    <p style="margin-top:15px;color:#b45309;font-size:13px">
+        Demo PIN: 1234. This PIN is not real security.
+        Data is temporary and stored only in this browser session.
+    </p>
+</div>
+
+</div>
+
+<footer>
+    <h3>CareCompass – BedFinder Blitz</h3>
+    <p>Smart Hospital Discovery & Emergency Support</p>
+    <p style="margin-top:10px">Hackathon Project | 2026</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+// SAMPLE DATA ONLY: fictional hospitals and approximate
+// demonstration coordinates around Hyderabad.
+
+let hospitals = [
+ {name:"City Care Hospital",area:"Kompally",lat:17.538,
+  lng:78.486,general:60,icu:4,ventilator:5,oxygen:15,
+  specialties:["Cardiology","Trauma","Cath Lab"],facilities:["24/7 Trauma Center"]},
+
+ {name:"Sunrise Medical Center",area:"Medchal",lat:17.630,
+  lng:78.480,general:45,icu:6,ventilator:3,oxygen:12,
+  specialties:["Pediatrics","Cardiology"],facilities:["Pediatric ICU"]},
+
+ {name:"Green Life Hospital",area:"Suchitra",lat:17.508,
+  lng:78.490,general:30,icu:0,ventilator:2,oxygen:8,
+  specialties:["Trauma","Burn Unit"],facilities:["Burn Unit"]},
+
+ {name:"Hope Multispeciality",area:"Miyapur",lat:17.496,
+  lng:78.356,general:70,icu:8,ventilator:6,oxygen:20,
+  specialties:["Cardiology","Pediatrics"],facilities:["Cath Lab"]},
+
+ {name:"Apollo Sample Hospital",area:"Secunderabad",lat:17.439,
+  lng:78.498,general:55,icu:5,ventilator:4,oxygen:18,
+  specialties:["Cardiology","Trauma"],facilities:["24/7 Trauma Center"]},
+
+ {name:"Care Plus Hospital",area:"Alwal",lat:17.505,
+  lng:78.515,general:40,icu:3,ventilator:2,oxygen:10,
+  specialties:["Pediatrics"],facilities:["Pediatric ICU"]},
+
+ {name:"Metro Health Center",area:"Bachupally",lat:17.545,
+  lng:78.359,general:35,icu:4,ventilator:3,oxygen:11,
+  specialties:["Trauma","Burn Unit"],facilities:["Burn Unit"]},
+
+ {name:"Blue Cross Hospital",area:"Malkajgiri",lat:17.450,
+  lng:78.537,general:65,icu:7,ventilator:5,oxygen:19,
+  specialties:["Cardiology","Cath Lab"],facilities:["Cath Lab"]},
+
+ {name:"Life Spring Hospital",area:"ECIL",lat:17.480,
+  lng:78.570,general:42,icu:3,ventilator:2,oxygen:13,
+  specialties:["Pediatrics","Trauma"],facilities:["24/7 Trauma Center"]},
+
+ {name:"Prime Health Hospital",area:"Begumpet",lat:17.444,
+  lng:78.466,general:80,icu:10,ventilator:7,oxygen:25,
+  specialties:["Cardiology","Trauma"],facilities:["Cath Lab"]},
+
+ {name:"Hope Care Center",area:"Kukatpally",lat:17.493,
+  lng:78.399,general:50,icu:5,ventilator:3,oxygen:15,
+  specialties:["Pediatrics","Burn Unit"],facilities:["Burn Unit"]},
+
+ {name:"Wellness Hospital",area:"Bowenpally",lat:17.468,
+  lng:78.483,general:38,icu:2,ventilator:2,oxygen:9,
+  specialties:["Cardiology"],facilities:["Cath Lab"]},
+
+ {name:"Silver Oak Hospital",area:"Jeedimetla",lat:17.520,
+  lng:78.458,general:60,icu:6,ventilator:4,oxygen:17,
+  specialties:["Trauma","Pediatrics"],facilities:["24/7 Trauma Center"]},
+
+ {name:"New Life Medical Center",area:"Ameerpet",lat:17.437,
+  lng:78.448,general:48,icu:4,ventilator:3,oxygen:14,
+  specialties:["Cardiology","Pediatrics"],facilities:["Pediatric ICU"]},
+
+ {name:"Golden Care Hospital",area:"Nizampet",lat:17.517,
+  lng:78.382,general:75,icu:8,ventilator:6,oxygen:22,
+  specialties:["Trauma","Burn Unit"],facilities:["Burn Unit"]}
+];
+
+let specialty = "all";
+let userLocation = null;
+let markers = [];
+
+// Map
+
+const map = L.map('map').setView([17.45,78.48],11);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors'
+}).addTo(map);
+
+function distance(lat1,lon1,lat2,lon2) {
+    const R = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLon = (lon2-lon1)*Math.PI/180;
+
+    const a =
+        Math.sin(dLat/2)**2 +
+        Math.cos(lat1*Math.PI/180) *
+        Math.cos(lat2*Math.PI/180) *
+        Math.sin(dLon/2)**2;
+
+    return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function status(h) {
+    if(h.icu===0) return "Divert";
+    if(h.icu<=3) return "Busy";
+    return "Normal";
+}
+
+function renderHospitals() {
+
+    const search = document.getElementById("search")
+        .value.toLowerCase();
+
+    const bed = document.getElementById("bedFilter").value;
+
+    let filtered = hospitals.map((h,i)=>({...h,index:i}));
+
+    filtered = filtered.filter(h => {
+
+        const matchSearch =
+            h.name.toLowerCase().includes(search) ||
+            h.area.toLowerCase().includes(search) ||
+            h.specialties.some(s=>s.toLowerCase().includes(search));
+
+        const matchSpecialty =
+            specialty==="all" ||
+            h.specialties.includes(specialty) ||
+            h.facilities.includes(specialty);
+
+        const matchBed = bed==="all" || h[bed]>0;
+
+        return matchSearch && matchSpecialty && matchBed;
+    });
+
+    if(userLocation) {
+        filtered.sort((a,b)=>
+            distance(userLocation.lat,userLocation.lng,a.lat,a.lng) -
+            distance(userLocation.lat,userLocation.lng,b.lat,b.lng)
+        );
+    }
+
+    document.getElementById("hospitalList").innerHTML =
+        filtered.map(h=>`
+        <div class="hospital">
+
+            <h3>🏥 ${h.name}</h3>
+
+            <p>📍 ${h.area}</p>
+
+            <p>Distance: ${
+                userLocation
+                ? distance(userLocation.lat,userLocation.lng,h.lat,h.lng).toFixed(2)+" km"
+                : "Location not selected"
+            }</p>
+
+            <div class="beds">
+                <b>Bed Availability (Sample)</b><br>
+                General: ${h.general}<br>
+                ICU: ${h.icu}<br>
+                Ventilator: ${h.ventilator}<br>
+                Oxygen: ${h.oxygen}
+            </div>
+
+            <p><b>Specialties:</b> ${h.specialties.join(", ")}</p>
+
+            <p><b>Facilities:</b> ${h.facilities.join(", ")}</p>
+
+            <span class="status ${status(h)}">
+                ${status(h)==="Divert"?"ER FULL - DIVERT":status(h)}
+            </span>
+
+            <p>Last updated: Demo session</p>
+
+            <div class="action">
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}"
+                target="_blank" class="directions">
+                🗺 Directions</a>
+
+                <button onclick="focusHospital(${h.index})">
+                View Map</button>
+            </div>
+
+        </div>
+    `).join("");
+
+    if(filtered.length===0) {
+        document.getElementById("hospitalList").innerHTML =
+            "<p>No matching sample hospitals found.</p>";
+    }
+
+    updateStats();
+    updateMap();
+}
+
+function updateStats() {
+    document.getElementById("total").innerText=hospitals.length;
+
+    document.getElementById("icuTotal").innerText=
+        hospitals.reduce((sum,h)=>sum+h.icu,0);
+
+    document.getElementById("oxygenTotal").innerText=
+        hospitals.reduce((sum,h)=>sum+h.oxygen,0);
+}
+
+function updateMap() {
+
+    markers.forEach(m=>map.removeLayer(m));
+    markers=[];
+
+    hospitals.forEach((h,i)=>{
+
+        let color = status(h)==="Normal"?"green":
+                    status(h)==="Busy"?"orange":"red";
+
+        let marker=L.circleMarker([h.lat,h.lng],{
+            radius:9,
+            color:color,
+            fillColor:color,
+            fillOpacity:0.8
+        }).addTo(map);
+
+        marker.bindPopup(`
+            <b>${h.name}</b><br>
+            ICU beds: ${h.icu}<br>
+            Status: ${status(h)}
+        `);
+
+        markers.push(marker);
+    });
+}
+
+function focusHospital(i) {
+    const h=hospitals[i];
+    map.setView([h.lat,h.lng],15);
+    markers[i].openPopup();
+    document.getElementById("map").scrollIntoView({
+        behavior:"smooth"
+    });
+}
+
+function setSpecialty(value,button) {
+    specialty=value;
+
+    document.querySelectorAll(".filters .filter")
+        .forEach(b=>b.classList.remove("active"));
+
+    button.classList.add("active");
+
+    renderHospitals();
+}
+
+function getLocation() {
+
+    if(!navigator.geolocation) {
+        alert("Geolocation is not supported.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        position=>{
+
+            userLocation={
+                lat:position.coords.latitude,
+                lng:position.coords.longitude
+            };
+
+            L.marker([userLocation.lat,userLocation.lng])
+                .addTo(map)
+                .bindPopup("Your current location")
+                .openPopup();
+
+            map.setView([userLocation.lat,userLocation.lng],12);
+
+            renderHospitals();
+        },
+
+        ()=>alert("Location unavailable. Please allow location access.")
+    );
+}
+
+// Demo admin update
+
+function updateBeds() {
+
+    if(document.getElementById("adminPin").value!=="1234") {
+        document.getElementById("adminMessage").innerText=
+            "Incorrect demo PIN!";
+        return;
+    }
+
+    const index=parseInt(
+        document.getElementById("hospitalSelect").value
+    );
+
+    const type=document.getElementById("type").value;
+    const operation=document.getElementById("operation").value;
+    const amount=parseInt(document.getElementById("amount").value);
+
+    if(!Number.isInteger(index) || !Number.isInteger(amount) || amount<=0) {
+        document.getElementById("adminMessage").innerText=
+            "Enter a valid hospital and positive bed quantity.";
+        return;
+    }
+
+    if(operation==="remove" && hospitals[index][type]<amount) {
+        document.getElementById("adminMessage").innerText=
+            "Cannot reduce below zero!";
+        return;
+    }
+
+    if(operation==="add") {
+        hospitals[index][type]+=amount;
+    } else {
+        hospitals[index][type]-=amount;
+    }
+
+    document.getElementById("adminMessage").innerText=
+        "Demo bed count updated successfully!";
+
+    document.getElementById("amount").value="";
+
+    renderHospitals();
+}
+
+function fillHospitalSelect() {
+    document.getElementById("hospitalSelect").innerHTML=
+        hospitals.map((h,i)=>
+            `<option value="${i}">${h.name}</option>`
+        ).join("");
+}
+
+fillHospitalSelect();
+renderHospitals();
+
+</script>
+
+</body>
+</html>
